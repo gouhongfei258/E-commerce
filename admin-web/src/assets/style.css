@@ -1,0 +1,32 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body { font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif; }
+
+.admin-layout { min-height: 100vh; display: flex; }
+.admin-sidebar { width: 220px; background: #304156; min-height: 100vh; }
+.admin-sidebar .logo { height: 60px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 18px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.admin-main { flex: 1; display: flex; flex-direction: column; overflow-x: hidden; }
+.admin-header { height: 50px; background: #fff; border-bottom: 1px solid #e6e6e6; display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; }
+.admin-content { flex: 1; padding: 20px; background: #f0f2f5; }
+.admin-breadcrumb { margin-bottom: 15px; }
+.stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.stat-card { background: #fff; padding: 20px; border-radius: 4px; }
+.stat-card .label { color: #909399; font-size: 14px; margin-bottom: 8px; }
+.stat-card .value { font-size: 28px; font-weight: bold; color: #303133; }
+.stat-card .unit { font-size: 14px; color: #606266; }
+.chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.chart-box { background: #fff; padding: 16px; border-radius: 4px; }
+.chart-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #303133; }
+.login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f0f2f5; }
+.login-card { width: 400px; }
+.login-card .title { text-align: center; font-size: 24px; margin-bottom: 30px; color: #303133; }
+.filter-bar { background: #fff; padding: 16px; border-radius: 4px; margin-bottom: 16px; }
+.data-table { background: #fff; padding: 16px; border-radius: 4px; }
+.pagination-wrap { display: flex; justify-content: flex-end; margin-top: 16px; }
+.order-status-tag.pending { color: #E6A23C; }
+.order-status-tag.paid { color: #409EFF; }
+.order-status-tag.shipped { color: #67C23A; }
+.order-status-tag.delivered { color: #67C23A; }
+.order-status-tag.cancelled { color: #909399; }
+.order-status-tag.refunding { color: #F56C6C; }
+.order-status-tag.refunded { color: #909399; }

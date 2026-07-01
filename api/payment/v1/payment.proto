@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/storm/myidea/api/payment/v1;v1";
+
+// PaymentStatus represents the lifecycle of a payment.
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  PENDING = 1;   // Created but not yet processed
+  SUCCESS = 2;   // Payment completed successfully
+  FAILED = 3;    // Payment failed
+  REFUNDING = 4; // Refund in progress
+  REFUNDED = 5;  // Fully refunded
+}
+
+// PaymentMethod represents the payment channel.
+// MOCK is the built-in mock provider for development.
+// ALIPAY / WECHAT_PAY are reserved for third-party SDK integration.
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  MOCK = 1;        // Built-in mock provider for dev/test
+  ALIPAY = 2;      // Reserved for Alipay SDK
+  WECHAT_PAY = 3;  // Reserved for WeChat Pay SDK
+}
+
+message PaymentProto {
+  int64 id = 1;
+  int64 user_id = 2;
+  string order_no = 3;
+  double total_amount = 4;
+  double paid_amount = 5;
+  PaymentStatus status = 6;
+  PaymentMethod method = 7;
+  string provider_trade_no = 8;    // Transaction ID from third-party provider (e.g. Alipay trade_no)
+  string provider_raw_response = 9; // Raw response from the provider SDK (for debugging/audit)
+  string fail_reason = 10;
+  string created_at = 11;
+  string updated_at = 12;
+}
+
+message CreatePaymentRequest {
+  int64 user_id = 1;
+  string order_no = 2;
+  double total_amount = 3;
+  PaymentMethod method = 4; // Which payment channel to use (default: MOCK)
+}
+
+message CreatePaymentResponse {
+  PaymentProto payment = 1;
+}
+
+message ProcessPaymentRequest {
+  int64 payment_id = 1;
+  PaymentMethod method = 2; // Override the payment channel if needed
+}
+
+message ProcessPaymentResponse {
+  PaymentProto payment = 1;
+}
+
+message GetPaymentRequest {
+  int64 payment_id = 1;
+}
+
+message GetPaymentResponse {
+  PaymentProto payment = 1;
+}
+
+message GetPaymentByOrderRequest {
+  string order_no = 1;
+}
+
+message GetPaymentByOrderResponse {
+  PaymentProto payment = 1;
+}
+
+// NotifyPayment is used by third-party payment providers to send async payment results
+// (e.g. Alipay asynchronous notification callback).
+message NotifyPaymentRequest {
+  int64 payment_id = 1;
+  PaymentStatus status = 2;       // SUCCESS or FAILED
+  string provider_trade_no = 3;   // Transaction ID from the provider
+  string provider_raw_response = 4; // Full callback payload from the provider
+}
+
+message NotifyPaymentResponse {
+  PaymentProto payment = 1;
+}
+
+// ------------------ AdminListPayments ------------------
+
+message AdminListPaymentsRequest {
+  int32  page      = 1;
+  int32  page_size = 2;
+  int32  status    = 3; // 0 = all
+  string order_no  = 4;
+}
+
+message AdminListPaymentsResponse {
+  repeated PaymentProto payments = 1;
+  int32                 total    = 2;
+}
+
+service PaymentService {
+  // CreatePayment creates a payment record with Pending status.
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  // ProcessPayment processes the payment through the configured provider.
+  // For MOCK provider: simulates 80% success / 20% failure.
+  // For ALIPAY/WECHAT_PAY: delegates to the registered third-party SDK.
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  // GetPayment retrieves a payment record by its ID.
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  // GetPaymentByOrder retrieves a payment record by order number.
+  rpc GetPaymentByOrder(GetPaymentByOrderRequest) returns (GetPaymentByOrderResponse);
+  // NotifyPayment handles async callback from third-party payment providers
+  // (e.g. Alipay asynchronous notification).
+  rpc NotifyPayment(NotifyPaymentRequest) returns (NotifyPaymentResponse);
+
+  // AdminListPayments lists all payments with filters (admin only).
+  rpc AdminListPayments(AdminListPaymentsRequest) returns (AdminListPaymentsResponse);
+}

@@ -1,0 +1,276 @@
+syntax = "proto3";
+
+package product.v1;
+
+option go_package = "github.com/storm/myidea/api/product/v1;v1";
+
+// ProductService is the product management service (categories, brands, SPU, SKU, stock).
+service ProductService {
+  // Category
+  rpc CreateCategory(CreateCategoryRequest) returns (CategoryResponse);
+  rpc UpdateCategory(UpdateCategoryRequest) returns (CategoryResponse);
+  rpc DeleteCategory(DeleteCategoryRequest) returns (Empty);
+  rpc GetCategoryTree(GetCategoryTreeRequest) returns (GetCategoryTreeResponse);
+
+  // Brand
+  rpc CreateBrand(CreateBrandRequest) returns (BrandResponse);
+  rpc ListBrands(ListBrandsRequest) returns (ListBrandsResponse);
+
+  // SPU
+  rpc CreateSPU(CreateSPURequest) returns (SPUResponse);
+  rpc UpdateSPU(UpdateSPURequest) returns (SPUResponse);
+  rpc GetSPU(GetSPURequest) returns (SPUResponse);
+  rpc ListSPUs(ListSPUsRequest) returns (ListSPUsResponse);
+
+  // SKU
+  rpc BatchCreateSKU(BatchCreateSKURequest) returns (BatchCreateSKUResponse);
+  rpc UpdateSKU(UpdateSKURequest) returns (SKUResponse);
+  rpc ListSKUs(ListSKUsRequest) returns (ListSKUsResponse);
+
+  // Stock (核心，供订单服务调用)
+  rpc LockStock(LockStockRequest) returns (LockStockResponse);
+  rpc ConfirmDeductStock(ConfirmDeductRequest) returns (Empty);
+  rpc UnlockStock(UnlockStockRequest) returns (Empty);
+}
+
+// ProductErrorReason defines business error codes for the product domain.
+enum ProductErrorReason {
+  CATEGORY_NOT_FOUND         = 0;
+  CATEGORY_HAS_CHILDREN      = 1;
+  BRAND_NOT_FOUND            = 2;
+  SPU_NOT_FOUND              = 3;
+  SKU_NOT_FOUND              = 4;
+  STOCK_INSUFFICIENT         = 5;
+  STOCK_LOCK_CONFLICT        = 6;
+  STOCK_OPERATION_DUPLICATED = 7;
+  SKU_ATTR_INVALID           = 8;
+  STATUS_TRANSITION_INVALID  = 9;
+}
+
+// ------------------ Shared messages ------------------
+
+message Empty {}
+
+message CategoryProto {
+  int64  id         = 1;
+  int64  parent_id  = 2;
+  string name       = 3;
+  string icon       = 4;
+  int32  sort_order = 5;
+  int32  level      = 6;
+  string created_at = 7;
+  repeated CategoryProto children = 8;
+}
+
+message BrandProto {
+  int64  id         = 1;
+  string name       = 2;
+  string logo       = 3;
+  int32  sort_order = 4;
+  string created_at = 5;
+}
+
+message SPUProto {
+  int64    id                = 1;
+  int64    category_id       = 2;
+  int64    brand_id          = 3;
+  string   title             = 4;
+  string   subtitle          = 5;
+  int32    status            = 6;
+  repeated string saleable_attr_names = 7;
+  int32    sale_count        = 8;
+  string   created_at        = 9;
+  string   updated_at        = 10;
+  repeated SKUProto skus     = 11;
+}
+
+message SKUProto {
+  int64    id              = 1;
+  int64    spu_id          = 2;
+  map<string, string> attrs = 3;
+  double   price           = 4;
+  double   origin_price    = 5;
+  int32    stock           = 6;
+  int32    locked_stock    = 7;
+  string   code            = 8;
+  string   image           = 9;
+  int32    status          = 10;
+  int32    sale_count      = 11;
+  int32    version         = 12;
+  string   created_at      = 13;
+  string   updated_at      = 14;
+}
+
+// ------------------ Category ------------------
+
+message CreateCategoryRequest {
+  int64  parent_id  = 1;
+  string name       = 2;
+  string icon       = 3;
+  int32  sort_order = 4;
+}
+
+message UpdateCategoryRequest {
+  int64  id         = 1;
+  string name       = 2;
+  string icon       = 3;
+  int32  sort_order = 4;
+}
+
+message DeleteCategoryRequest {
+  int64 id = 1;
+}
+
+message GetCategoryTreeRequest {}
+
+message GetCategoryTreeResponse {
+  repeated CategoryProto categories = 1;
+}
+
+message CategoryResponse {
+  CategoryProto category = 1;
+}
+
+// ------------------ Brand ------------------
+
+message CreateBrandRequest {
+  string name       = 1;
+  string logo       = 2;
+  int32  sort_order = 3;
+}
+
+message ListBrandsRequest {
+  string keyword   = 1;
+  int32  page      = 2;
+  int32  page_size = 3;
+}
+
+message ListBrandsResponse {
+  repeated BrandProto brands = 1;
+  int32               total  = 2;
+}
+
+message BrandResponse {
+  BrandProto brand = 1;
+}
+
+// ------------------ SPU ------------------
+
+message CreateSPURequest {
+  int64             category_id       = 1;
+  int64             brand_id          = 2;
+  string            title             = 3;
+  string            subtitle          = 4;
+  repeated string   saleable_attr_names = 5;
+}
+
+message UpdateSPURequest {
+  int64    id                = 1;
+  int64    category_id       = 2;
+  int64    brand_id          = 3;
+  string   title             = 4;
+  string   subtitle          = 5;
+  int32    status            = 6;
+  repeated string saleable_attr_names = 7;
+}
+
+message GetSPURequest {
+  int64 id = 1;
+}
+
+message ListSPUsRequest {
+  int64  category_id = 1;
+  int64  brand_id    = 2;
+  string keyword     = 3;
+  int32  status      = 4;
+  int32  page        = 5;
+  int32  page_size   = 6;
+}
+
+message ListSPUsResponse {
+  repeated SPUProto spus  = 1;
+  int32             total = 2;
+}
+
+message SPUResponse {
+  SPUProto spu = 1;
+}
+
+// ------------------ SKU ------------------
+
+message BatchCreateSKURequest {
+  int64                      spu_id = 1;
+  repeated CreateSKUItem     skus   = 2;
+}
+
+message CreateSKUItem {
+  map<string, string> attrs        = 1;
+  double              price        = 2;
+  double              origin_price = 3;
+  int32               stock        = 4;
+  string              code         = 5;
+  string              image        = 6;
+}
+
+message BatchCreateSKUResponse {
+  repeated SKUProto skus = 1;
+}
+
+message UpdateSKURequest {
+  int64    id           = 1;
+  double   price        = 2;
+  double   origin_price = 3;
+  int32    stock        = 4;
+  string   code         = 5;
+  string   image        = 6;
+  int32    status       = 7;
+}
+
+message ListSKUsRequest {
+  int64 spu_id = 1;
+}
+
+message ListSKUsResponse {
+  repeated SKUProto skus = 1;
+}
+
+message SKUResponse {
+  SKUProto sku = 1;
+}
+
+// ------------------ Stock ------------------
+
+message LockStockItem {
+  int64  sku_id   = 1;
+  int32  quantity = 2;
+  int32  version  = 3;
+}
+
+message LockStockRequest {
+  string             order_no = 1;
+  repeated LockStockItem items = 2;
+}
+
+message LockStockResponse {
+  bool success = 1;
+}
+
+message ConfirmDeductItem {
+  int64  sku_id   = 1;
+  int32  quantity = 2;
+}
+
+message ConfirmDeductRequest {
+  string                 order_no = 1;
+  repeated ConfirmDeductItem items = 2;
+}
+
+message UnlockStockItem {
+  int64  sku_id   = 1;
+  int32  quantity = 2;
+}
+
+message UnlockStockRequest {
+  string                 order_no = 1;
+  repeated UnlockStockItem items = 2;
+}

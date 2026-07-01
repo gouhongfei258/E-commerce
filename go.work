@@ -1,0 +1,11 @@
+go 1.25.7
+
+use (
+	./api
+	./bff
+	./service/cart
+	./service/order
+	./service/payment
+	./service/product
+	./service/user
+)

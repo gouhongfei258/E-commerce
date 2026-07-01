@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package cart.v1;
+
+option go_package = "github.com/storm/myidea/api/cart/v1;v1";
+
+// CartService manages the shopping cart for a user.
+service CartService {
+  // AddItem adds a product (SKU) to the cart. If the same SKU already exists,
+  // the quantity is incremented.
+  rpc AddItem(AddItemRequest) returns (CartItemProto);
+
+  // UpdateQuantity changes the quantity of a specific cart item.
+  rpc UpdateQuantity(UpdateQuantityRequest) returns (CartItemProto);
+
+  // RemoveItem deletes a single item from the cart.
+  rpc RemoveItem(RemoveItemRequest) returns (Empty);
+
+  // ListItems returns all items in the current user's cart.
+  rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+
+  // ClearItems removes the specified items (by ID) from the cart.
+  // Used after a successful checkout.
+  rpc ClearItems(ClearItemsRequest) returns (Empty);
+}
+
+// CartErrorReason defines business error codes for the cart domain.
+enum CartErrorReason {
+  CART_ITEM_NOT_FOUND  = 0;
+  CART_QUANTITY_INVALID = 1;
+  CART_ITEM_DUPLICATED  = 2;
+}
+
+// ------------------ Shared messages ------------------
+
+message Empty {}
+
+message CartItemProto {
+  int64                id         = 1;
+  int64                user_id    = 2;
+  int64                product_id = 3;
+  int64                sku_id     = 4;
+  int64                spu_id     = 5;
+  int64                shop_id    = 6;
+  string               title      = 7;
+  string               image      = 8;
+  map<string, string>  attrs      = 9;
+  double               price      = 10;
+  int32                quantity   = 11;
+  bool                 selected   = 12;
+  string               created_at = 13;
+  string               updated_at = 14;
+}
+
+// ------------------ AddItem ------------------
+
+message AddItemRequest {
+  int64                user_id    = 1;
+  int64                product_id = 2;
+  int64                sku_id     = 3;
+  int64                spu_id     = 4;
+  int64                shop_id    = 5;
+  string               title      = 6;
+  string               image      = 7;
+  map<string, string>  attrs      = 8;
+  double               price      = 9;
+  int32                quantity   = 10;
+}
+
+// ------------------ UpdateQuantity ------------------
+
+message UpdateQuantityRequest {
+  int64 user_id   = 1;
+  int64 item_id   = 2;
+  int32 quantity  = 3;
+}
+
+// ------------------ RemoveItem ------------------
+
+message RemoveItemRequest {
+  int64 user_id = 1;
+  int64 item_id = 2;
+}
+
+// ------------------ ListItems ------------------
+
+message ListItemsRequest {
+  int64 user_id = 1;
+}
+
+message ListItemsResponse {
+  repeated CartItemProto items = 1;
+}
+
+// ------------------ ClearItems ------------------
+
+message ClearItemsRequest {
+  int64    user_id  = 1;
+  repeated int64 item_ids = 2;
+}
